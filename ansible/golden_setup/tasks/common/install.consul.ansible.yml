@@ -88,6 +88,7 @@
 - name: Render Policies
   loop:
     - client
+    - traefik
   ansible.builtin.template:
     src: "common/consul/policy.{{ item }}.hcl.j2"
     dest: "{{ v_dump_dir }}/consul_policies/{{ item }}.hcl"

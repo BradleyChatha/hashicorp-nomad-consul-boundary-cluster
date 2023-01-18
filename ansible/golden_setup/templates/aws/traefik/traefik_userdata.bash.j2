@@ -1,0 +1,20 @@
+AWS_REGION=$(curl http://169.254.169.254/2021-07-15/meta-data/placement/region)
+
+while [ 1 ]
+do
+    token=$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "{{ v_consul_aws_traefik_token_secret_name }}" --query "SecretString" --output text)
+    if [ $? -ne 0 ]; then
+        sleep 5;
+        continue;
+    fi
+
+    CONSUL_HTTP_TOKEN=$token consul members
+    if [ $? -ne 0 ]; then
+        sleep 5;
+        continue;
+    fi
+
+    sed -i "s/__replace_token/$token/g" /etc/traefik/traefik.yml
+    sudo systemctl start traefik
+    exit 0
+done

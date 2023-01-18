@@ -8,6 +8,11 @@ resource "aws_secretsmanager_secret" "cluster_consul_client_token" {
   description = "The client token for a typical Consul client"
 }
 
+resource "aws_secretsmanager_secret" "cluster_consul_traefik_token" {
+  name        = "cluster-consul-traefik-token"
+  description = "The client token for Traefik"
+}
+
 resource "aws_secretsmanager_secret" "cluster_nomad_bootstrap_token" {
   name        = "cluster-nomad-bootstrap-token"
   description = "The bootstrap token for the Nomad cluster"

@@ -4,13 +4,7 @@ sudo systemctl start consul
 
 while [ 1 ]
 do
-    secretName=""
-    if [ -f /is_consul_server ]; then
-        secretName="{{ v_consul_aws_admin_token_secret_name }}"
-    else
-        secretName="{{ v_consul_aws_client_token_secret_name }}"
-    fi
-
+    secretName=$(cat /tmp/consul.token.name)
     token=$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$secretName" --query "SecretString" --output text)
     if [ $? -ne 0 ]; then
         sleep 5;

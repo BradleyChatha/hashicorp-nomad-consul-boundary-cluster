@@ -23,10 +23,20 @@
   when: "True" # Keeps the linter happy
   ansible.builtin.command: consul acl policy create -name "consul-client" -description "A generic policy useful for all consul clients" -rules "@/etc/bchatha/consul_policies/client.hcl"
 
+- name: Create the Traefik policy
+  run_once: true
+  when: "True" # Keeps the linter happy
+  ansible.builtin.command: consul acl policy create -name "traefik" -description "A policy used by traefik" -rules "@/etc/bchatha/consul_policies/traefik.hcl"
+
 - name: Create the generic-client role
   run_once: true
   when: "True" # Keeps the linter happy
   ansible.builtin.command: consul acl role create -name "generic-client" -description "A generic role" -policy-name "consul-client"
+
+- name: Create the Traefik role
+  run_once: true
+  when: "True" # Keeps the linter happy
+  ansible.builtin.command: consul acl role create -name "traefik" -description "The role used by Traefik" -policy-name "traefik"
 
 - name: Create the generic-client token
   run_once: true
@@ -34,9 +44,22 @@
   register: r_generic_client_token
   ansible.builtin.shell: "consul acl token create -policy-name 'consul-client' | perl -n -e'/SecretID:\\s+([^\\n]+)/ && print $1'"
 
+- name: Create the traefik token
+  run_once: true
+  when: "True" # Keeps the linter happy
+  register: r_traefik_token
+  ansible.builtin.shell: "consul acl token create -policy-name 'traefik' | perl -n -e'/SecretID:\\s+([^\\n]+)/ && print $1'"
+
 - name: Set Consul Client Token Secret via Local AWS CLI
   become: false
   run_once: true
   when: "True" # Keeps the linter happy
   delegate_to: localhost
   ansible.builtin.command: "aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_consul_aws_client_token_secret_name }} --secret-string {{ r_generic_client_token.stdout }}"
+
+- name: Set Consul Traefik Token Secret via Local AWS CLI
+  become: false
+  run_once: true
+  when: "True" # Keeps the linter happy
+  delegate_to: localhost
+  ansible.builtin.command: "aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_consul_aws_traefik_token_secret_name }} --secret-string {{ r_traefik_token.stdout }}"

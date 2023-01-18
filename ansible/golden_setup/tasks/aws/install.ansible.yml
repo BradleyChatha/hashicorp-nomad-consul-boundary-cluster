@@ -18,3 +18,6 @@
 
 - name: Install Nomad for AWS
   ansible.builtin.include_tasks: install.nomad.ansible.yml
+
+- name: Install Traefik for AWS
+  ansible.builtin.include_tasks: install.traefik.ansible.yml

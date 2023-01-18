@@ -1,0 +1,8 @@
+---
+- name: Render userdata script
+  ansible.builtin.template:
+    src: "aws/traefik/traefik_userdata.bash.j2"
+    dest: "{{ v_dump_dir }}/scripts/traefik_userdata.sh"
+    mode: u=rx
+    owner: root
+    group: root

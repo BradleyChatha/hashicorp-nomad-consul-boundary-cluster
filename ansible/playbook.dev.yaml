@@ -87,6 +87,7 @@
         sudo bash /etc/bchatha/scripts/consul_userdata.sh
         sudo bash /etc/bchatha/scripts/boundary_userdata.sh
         sudo bash /etc/bchatha/scripts/nomad_userdata.sh
+        sudo bash /etc/bchatha/scripts/traefik_userdata.sh
 
 - name: Start Clients
   hosts: clients
