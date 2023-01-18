@@ -3,6 +3,7 @@
 v_nomad_version: "1.4.3"
 v_consul_version: "1.14.3"
 v_boundary_version: "0.11.2"
+v_traefik_version: "2.9.6"
 
 v_ansible_to_hashi_arch_map: {
   "aarch64": "arm64",

@@ -2,7 +2,11 @@
     "files.associations": {
         "*.ansible.yml": "ansible",
         "*.hcl.j2": "hcl",
-        "*.bash.j2": "shellscript"
+        "*.bash.j2": "shellscript",
+        "*.yml.j2": "yaml"
     },
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "yaml.schemas": {
+        "https://json.schemastore.org/traefik-v2.json": "*templates/common/traefik/*.yml.j2"
+    }
 }

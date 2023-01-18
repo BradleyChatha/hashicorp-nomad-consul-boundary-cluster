@@ -39,3 +39,6 @@
 
 - name: Install Boundary
   ansible.builtin.include_tasks: install.boundary.ansible.yml
+
+- name: Install Traefik
+  ansible.builtin.include_tasks: install.traefik.ansible.yml

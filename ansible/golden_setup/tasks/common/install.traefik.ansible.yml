@@ -1,0 +1,54 @@
+---
+- name: Create Traefik Group
+  ansible.builtin.group:
+    name: traefik
+
+- name: Create Traefik User
+  ansible.builtin.user:
+    name: traefik
+    group: traefik
+
+- name: Create Traefik Configuration Folder
+  ansible.builtin.file:
+    path: /etc/traefik
+    state: directory
+    mode: u=rx
+    owner: traefik
+    group: traefik
+
+- name: Download Zip
+  ansible.builtin.get_url:
+    url: "https://github.com/traefik/traefik/releases/download/v{{ v_traefik_version }}/traefik_v{{ v_traefik_version }}_linux_{{ g_hashicorp_architecture }}.tar.gz"
+    dest: /tmp/traefik.zip
+    mode: a+r
+
+- name: Unzip
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: /tmp/traefik.zip
+    dest: /usr/local/bin
+    mode: u=x,g=x
+    owner: traefik
+    group: traefik
+
+- name: Render Systemd Service
+  ansible.builtin.template:
+    src: common/systemd/traefik.service.j2
+    dest: /etc/systemd/system/traefik.service
+    mode: a+r
+
+- name: Render Configuration File
+  ansible.builtin.template:
+    src: "common/traefik/static.yml.j2"
+    dest: "/etc/traefik/traefik.yml"
+    mode: u=r
+    owner: traefik
+    group: traefik
+
+- name: Render Userdata
+  ansible.builtin.template:
+    src: "common/traefik/traefik_userdata.bash.j2"
+    dest: "{{ v_dump_dir }}/scripts/traefik_userdata.sh"
+    mode: u=rx
+    owner: root
+    group: root
