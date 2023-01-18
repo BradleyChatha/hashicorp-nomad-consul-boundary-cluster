@@ -1,0 +1,107 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Clear old data
+  hosts: all
+  become: true
+  tasks:
+    - name: Stop Consul
+      failed_when: false
+      ansible.builtin.systemd:
+        name: consul
+        state: stopped
+    - name: Clear Consul
+      ansible.builtin.file:
+        path: /opt/consul
+        state: absent
+    - name: Stop Nomad
+      failed_when: false
+      ansible.builtin.systemd:
+        name: nomad
+        state: stopped
+    - name: Clear Nomad
+      ansible.builtin.file:
+        path: /opt/nomad
+        state: absent
+    - name: Clear Nomad token
+      ansible.builtin.file:
+        path: /tmp/nomad.token
+        state: absent
+    - name: Stop Boundary
+      failed_when: false
+      ansible.builtin.systemd:
+        name: boundary
+        state: stopped
+
+- name: Install
+  hosts: all
+  tasks:
+    - name: Run role
+      vars:
+        v_platform: aws
+        v_task: install
+      ansible.builtin.include_role:
+        name: golden_setup
+
+- name: Bootstrap External Services via Bastion
+  hosts: bastion
+  tasks:
+    - name: Bootstrap
+      vars:
+        v_platform: aws
+        v_task: bootstrap_bastion
+      ansible.builtin.include_role:
+        name: golden_setup
+
+- name: Bootstrap Boundary
+  hosts: boundary_servers
+  tasks:
+    - name: Configure
+      ansible.builtin.shell: |
+        sudo bash /etc/bchatha/scripts/boundary_as_server.sh
+        sudo bash /etc/bchatha/scripts/boundary_userdata.sh
+    - name: Bootstrap
+      vars:
+        v_platform: aws
+        v_task: bootstrap_boundary
+      ansible.builtin.include_role:
+        name: golden_setup
+
+- name: Start Servers
+  hosts: servers
+  tasks:
+    - name: Start
+      ansible.builtin.shell: |
+        sudo bash /etc/bchatha/scripts/consul_as_server.sh
+        sudo bash /etc/bchatha/scripts/nomad_as_server.sh
+
+- name: Bootstrap Servers
+  hosts: servers
+  tasks:
+    - name: Bootstrap
+      vars:
+        v_platform: aws
+        v_task: bootstrap
+      ansible.builtin.include_role:
+        name: golden_setup
+    - name: Run userdata
+      ansible.builtin.shell: |
+        sudo bash /etc/bchatha/scripts/consul_userdata.sh
+        sudo bash /etc/bchatha/scripts/boundary_userdata.sh
+        sudo bash /etc/bchatha/scripts/nomad_userdata.sh
+
+- name: Start Clients
+  hosts: clients
+  tasks:
+    - name: Start
+      ansible.builtin.shell:
+        cmd: |
+          sudo bash /etc/bchatha/scripts/consul_as_client.sh
+          sudo bash /etc/bchatha/scripts/consul_userdata.sh
+          sudo bash /etc/bchatha/scripts/nomad_as_client.sh
+          sudo bash /etc/bchatha/scripts/nomad_userdata.sh
+          sudo bash /etc/bchatha/scripts/boundary_as_client.sh
+          sudo bash /etc/bchatha/scripts/boundary_userdata.sh

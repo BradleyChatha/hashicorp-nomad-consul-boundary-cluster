@@ -1,0 +1,107 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Create Consul Group
+  ansible.builtin.group:
+    name: consul
+
+- name: Create Consul User
+  ansible.builtin.user:
+    name: consul
+    group: consul
+
+- name: Create Consul Configuration Folder
+  ansible.builtin.file:
+    path: /etc/consul.d
+    state: directory
+    mode: u=rx
+    owner: consul
+    group: consul
+
+- name: Create Consul Policy Folder
+  ansible.builtin.file:
+    path: "{{ v_dump_dir }}/consul_policies"
+    state: directory
+    mode: u=r
+    owner: root
+    group: root
+
+- name: Create Consul Data Folder
+  ansible.builtin.file:
+    path: /opt/consul
+    state: directory
+    mode: u=rwx
+    owner: consul
+    group: consul
+
+- name: Download Zip
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/consul/{{ v_consul_version }}/consul_{{ v_consul_version }}_linux_{{ g_hashicorp_architecture }}.zip"
+    dest: /tmp/consul.zip
+    mode: a+r
+
+- name: Unzip
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: /tmp/consul.zip
+    dest: /usr/local/bin
+    mode: u=x,g=x
+    owner: consul
+    group: consul
+
+- name: Render Systemd Service
+  vars:
+    tv_is_client: false
+  ansible.builtin.template:
+    src: common/systemd/consul.service.j2
+    dest: /etc/systemd/system/consul.service
+    mode: a+r
+
+- name: Render Configuration Files
+  loop:
+    - client
+    - server
+  ansible.builtin.template:
+    src: "common/consul/consul.{{ item }}.hcl.j2"
+    dest: "{{ v_dump_dir }}/config/consul.{{ item }}.hcl"
+    mode: u=r
+    owner: consul
+    group: consul
+
+- name: Render Common Configuration File
+  ansible.builtin.template:
+    src: common/consul/consul.common.hcl.j2
+    dest: /etc/consul.d/consul.common.hcl
+    mode: u=r
+    owner: consul
+    group: consul
+
+- name: Render Configuration Scripts
+  loop:
+    - client
+    - server
+  ansible.builtin.template:
+    src: "common/consul/consul_as_{{ item }}.bash.j2"
+    dest: "{{ v_dump_dir }}/scripts/consul_as_{{ item }}.sh"
+    mode: u+rx
+    owner: root
+    group: root
+
+- name: Render Policies
+  loop:
+    - client
+  ansible.builtin.template:
+    src: "common/consul/policy.{{ item }}.hcl.j2"
+    dest: "{{ v_dump_dir }}/consul_policies/{{ item }}.hcl"
+    mode: u=r
+    owner: root
+    group: root
+
+# The actual configuration happens within Consul's user data, since our modifications to resolv.conf
+# need to happen after the EC2 instance has made its own changes to the file.
+- name: Install dnsmasq
+  ansible.builtin.apt:
+    name: dnsmasq

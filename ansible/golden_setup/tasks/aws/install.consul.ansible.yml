@@ -1,0 +1,21 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Copy Platform configuration
+  ansible.builtin.template:
+    src: aws/consul/consul.platform.hcl.j2
+    dest: /etc/consul.d/consul.platform.hcl
+    mode: u=r
+    owner: consul
+    group: consul
+
+- name: Render userdata script
+  ansible.builtin.template:
+    src: aws/consul/consul_userdata.bash.j2
+    dest: /etc/bchatha/scripts/consul_userdata.sh
+    mode: u=rx
+    owner: root
+    group: root

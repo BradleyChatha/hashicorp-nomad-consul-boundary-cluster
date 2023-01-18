@@ -1,0 +1,65 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Create Boundary Group
+  ansible.builtin.group:
+    name: boundary
+
+- name: Create Boundary User
+  ansible.builtin.user:
+    name: boundary
+    group: boundary
+
+- name: Create Boundary Configuration Folder
+  ansible.builtin.file:
+    path: /etc/boundary.d
+    state: directory
+    mode: u=rx
+    owner: boundary
+    group: boundary
+
+- name: Download Zip
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/boundary/{{ v_boundary_version }}/boundary_{{ v_boundary_version }}_linux_{{ g_hashicorp_architecture }}.zip"
+    dest: /tmp/boundary.zip
+    mode: a+r
+
+- name: Unzip
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: /tmp/boundary.zip
+    dest: /usr/local/bin
+    mode: u=x,g=x
+    owner: boundary
+    group: boundary
+
+- name: Render Systemd Service
+  ansible.builtin.template:
+    src: common/systemd/boundary.service.j2
+    dest: "/etc/systemd/system/boundary.service"
+    mode: a=r,u=r
+
+- name: Render Configuration Files
+  loop:
+    - client
+    - server
+  ansible.builtin.template:
+    src: "common/boundary/boundary.{{ item }}.hcl.j2"
+    dest: "{{ v_dump_dir }}/config/boundary.{{ item }}.hcl"
+    mode: u=r
+    owner: boundary
+    group: boundary
+
+- name: Render Configuration Scripts
+  loop:
+    - client
+    - server
+  ansible.builtin.template:
+    src: "common/boundary/boundary_as_{{ item }}.bash.j2"
+    dest: "{{ v_dump_dir }}/scripts/boundary_as_{{ item }}.sh"
+    mode: u=rx
+    owner: root
+    group: root

@@ -1,0 +1,3 @@
+mv {{ v_dump_dir }}/config/boundary.server.hcl /etc/boundary.d/boundary.hcl
+sed -i "s/__replace_name/$(hostname)/g" /etc/boundary.d/boundary.hcl
+touch /is_boundary_server

@@ -1,0 +1,42 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+
+- name: Common installation
+  become: true
+  when: "v_task == 'install'"
+  import_tasks: common/install.ansible.yml
+
+- name: AWS installation
+  become: true
+  when: "v_task == 'install' and v_platform == 'aws'"
+  import_tasks: aws/install.ansible.yml
+
+- name: Harden
+  become: true
+  when: "v_task == 'install"
+  import_tasks: security/harden.ansible.yml
+
+- name: Common Bootstrap
+  become: true
+  when: "v_task == 'bootstrap'"
+  import_tasks: common/bootstrap.ansible.yml
+
+- name: AWS Bootstrap
+  become: true
+  when: "v_task == 'bootstrap' and v_platform == 'aws'"
+  import_tasks: aws/bootstrap.ansible.yml
+
+- name: Mixed External Bootstrap via Bastion
+  become: true
+  when: "v_task == 'bootstrap_bastion'"
+  import_tasks: mixed/bootstrap_external.ansible.yml
+
+# Boundary is bootstrapped with a unique inventory, so needs its own task.
+- name: Bootstrap Boundary
+  become: true
+  when: "v_task == 'bootstrap_boundary'"
+  import_tasks: boundary/bootstrap.ansible.yml

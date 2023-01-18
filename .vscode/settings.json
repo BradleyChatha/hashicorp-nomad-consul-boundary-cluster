@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.ansible.yml": "ansible",
+        "*.hcl.j2": "hcl",
+        "*.bash.j2": "shellscript"
+    },
+    "editor.formatOnSave": true
+}

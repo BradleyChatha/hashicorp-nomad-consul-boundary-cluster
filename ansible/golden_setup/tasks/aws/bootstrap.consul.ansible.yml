@@ -1,0 +1,47 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Get Consul Token
+  run_once: true
+  register: r_slurp_consul_token
+  ansible.builtin.slurp:
+    path: /tmp/consul.token
+
+- name: Get Instance Region
+  run_once: true
+  when: "True" # Keeps the linter happy
+  register: r_curl_aws_region
+  ansible.builtin.command: curl http://169.254.169.254/2021-07-15/meta-data/placement/region
+
+- name: Set Consul Token Secret via Local AWS CLI
+  become: false
+  run_once: true
+  when: "True" # Keeps the linter happy
+  delegate_to: localhost
+  ansible.builtin.command: 'aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_consul_aws_admin_token_secret_name }} --secret-string "{{ r_slurp_consul_token.content | b64decode | trim }}"'
+
+- name: Create the client policy
+  run_once: true
+  when: "True" # Keeps the linter happy
+  ansible.builtin.command: consul acl policy create -name "consul-client" -description "A generic policy useful for all consul clients" -rules "@/etc/bchatha/consul_policies/client.hcl"
+
+- name: Create the generic-client role
+  run_once: true
+  when: "True" # Keeps the linter happy
+  ansible.builtin.command: consul acl role create -name "generic-client" -description "A generic role" -policy-name "consul-client"
+
+- name: Create the generic-client token
+  run_once: true
+  when: "True" # Keeps the linter happy
+  register: r_generic_client_token
+  ansible.builtin.shell: "consul acl token create -policy-name 'consul-client' | perl -n -e'/SecretID:\\s+([^\\n]+)/ && print $1'"
+
+- name: Set Consul Client Token Secret via Local AWS CLI
+  become: false
+  run_once: true
+  when: "True" # Keeps the linter happy
+  delegate_to: localhost
+  ansible.builtin.command: "aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_consul_aws_client_token_secret_name }} --secret-string {{ r_generic_client_token.stdout }}"

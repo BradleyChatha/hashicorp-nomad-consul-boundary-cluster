@@ -1,0 +1,38 @@
+AWS_REGION=$(curl http://169.254.169.254/2021-07-15/meta-data/placement/region)
+
+sudo systemctl start consul
+
+while [ 1 ]
+do
+    secretName=""
+    if [ -f /is_consul_server ]; then
+        secretName="{{ v_consul_aws_admin_token_secret_name }}"
+    else
+        secretName="{{ v_consul_aws_client_token_secret_name }}"
+    fi
+
+    token=$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$secretName" --query "SecretString" --output text)
+    if [ $? -ne 0 ]; then
+        sleep 5;
+        continue;
+    fi
+
+    CONSUL_HTTP_TOKEN=$token consul acl set-agent-token default "$token"
+    if [ $? -ne 0 ]; then
+        sleep 5;
+        continue;
+    fi
+
+    consul members
+    if [ $? -ne 0 ]; then
+        sleep 5;
+        continue;
+    fi
+
+    vpcDnsIp=$(cat /etc/resolv.conf | tail -n 1 | sed 's/nameserver //')
+    echo "server=/consul/127.0.0.1#8600" | sudo tee -a /etc/dnsmasq.conf
+    echo "prepend domain-name-servers 127.0.0.53;" | sudo tee -a /etc/dhcp/dhclient.conf
+    sudo systemctl restart networking
+    sudo systemctl restart dnsmasq
+    exit 0
+done

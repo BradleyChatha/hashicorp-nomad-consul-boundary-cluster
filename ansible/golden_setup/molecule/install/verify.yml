@@ -1,0 +1,45 @@
+---
+# This is an example playbook to execute Ansible tests.
+
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    v_files_that_should_exist:
+      # region Nomad
+      - /etc/bchatha/config/nomad.client.service
+      - /etc/bchatha/config/nomad.server.service
+      - /etc/bchatha/config/nomad.client.hcl
+      - /etc/bchatha/config/nomad.server.hcl
+      - /etc/bchatha/scripts/nomad_as_server.sh
+      - /etc/bchatha/scripts/nomad_as_client.sh
+      - /etc/nomad.d/nomad.common.hcl
+      - /usr/local/bin/nomad
+      # endregion Nomad
+
+      # region Consul
+      - /etc/bchatha/config/consul.client.hcl
+      - /etc/bchatha/config/consul.server.hcl
+      - /etc/bchatha/scripts/consul_as_server.sh
+      - /etc/bchatha/scripts/consul_as_client.sh
+      - /etc/systemd/system/consul.service
+      - /etc/consul.d/consul.common.hcl
+      - /usr/local/bin/consul
+      # endregion Consul
+  tasks:
+    - name: Get file stats
+      loop: "{{ v_files_that_should_exist }}"
+      register: r_file_stats
+      ansible.builtin.stat:
+        path: "{{ item }}"
+    - name: Assert that file exists
+      loop: "{{ v_files_that_should_exist }}"
+      loop_control:
+        index_var: idx
+      ansible.builtin.assert:
+        that:
+          - r_file_stats.results[idx].stat.exists
+        success_msg: "{{ item }} exists"
+        fail_msg: "{{ item }} does not exist"
+        quiet: true

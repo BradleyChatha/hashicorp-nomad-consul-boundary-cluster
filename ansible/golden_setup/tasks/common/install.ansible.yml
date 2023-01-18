@@ -1,0 +1,46 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Select architecture name used to download artifacts
+  ansible.builtin.set_fact:
+    g_hashicorp_architecture: "{{ v_ansible_to_hashi_arch_map[ansible_architecture] }}"
+
+- name: Update Apt
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Ensure unzip is installed
+  ansible.builtin.package:
+    name: unzip
+    state: present
+
+- name: Create a place to dump configs
+  ansible.builtin.file:
+    path: "{{ v_dump_dir }}/config"
+    mode: a=r,ug=wr
+    state: directory
+    recurse: true
+
+- name: Create a place to dump configuration scripts
+  ansible.builtin.file:
+    path: "{{ v_dump_dir }}/scripts"
+    mode: a=rx,ug=wr
+    state: directory
+
+- name: Ensure auxiliary tools are installed
+  ansible.builtin.apt:
+    name:
+      - jq
+    state: present
+
+- name: Install Nomad
+  ansible.builtin.include_tasks: install.nomad.ansible.yml
+
+- name: Install Consul
+  ansible.builtin.include_tasks: install.consul.ansible.yml
+
+- name: Install Boundary
+  ansible.builtin.include_tasks: install.boundary.ansible.yml

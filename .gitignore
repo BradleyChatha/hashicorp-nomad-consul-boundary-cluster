@@ -1,0 +1,3 @@
+.terraform
+ansible/generated/*.pem
+ansible/generated/*.inventory

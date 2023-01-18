@@ -1,0 +1,91 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Create Nomad Group
+  ansible.builtin.group:
+    name: nomad
+
+- name: Create Nomad User
+  ansible.builtin.user:
+    name: nomad
+    group: nomad
+
+- name: Create Nomad Configuration Folder
+  ansible.builtin.file:
+    path: /etc/nomad.d
+    state: directory
+    mode: u=rx
+    owner: nomad
+    group: nomad
+
+- name: Create Nomad Data Folder
+  ansible.builtin.file:
+    path: /opt/nomad
+    state: directory
+    mode: u=rwx
+    owner: nomad
+    group: nomad
+
+- name: Download Zip
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/nomad/{{ v_nomad_version }}/nomad_{{ v_nomad_version }}_linux_{{ g_hashicorp_architecture }}.zip"
+    dest: /tmp/nomad.zip
+    mode: a+r
+
+- name: Unzip
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: /tmp/nomad.zip
+    dest: /usr/local/bin
+    mode: u=x,g=x
+    owner: nomad
+    group: nomad
+
+- name: Render Server Systemd Service
+  vars:
+    tv_is_client: false
+  ansible.builtin.template:
+    src: common/systemd/nomad.service.j2
+    dest: "{{ v_dump_dir }}/config/nomad.server.service"
+    mode: a=r,u=r
+
+- name: Render Client Systemd Service
+  vars:
+    tv_is_client: true
+  ansible.builtin.template:
+    src: common/systemd/nomad.service.j2
+    dest: "{{ v_dump_dir }}/config/nomad.client.service"
+    mode: a=r,u=r
+
+- name: Render Configuration Files
+  loop:
+    - client
+    - server
+  ansible.builtin.template:
+    src: "common/nomad/nomad.{{ item }}.hcl.j2"
+    dest: "{{ v_dump_dir }}/config/nomad.{{ item }}.hcl"
+    mode: u=r
+    owner: nomad
+    group: nomad
+
+- name: Render Common Configuration File
+  ansible.builtin.template:
+    src: common/nomad/nomad.common.hcl.j2
+    dest: /etc/nomad.d/nomad.common.hcl
+    mode: u=r
+    owner: nomad
+    group: nomad
+
+- name: Render Configuration Scripts
+  loop:
+    - client
+    - server
+  ansible.builtin.template:
+    src: "common/nomad/nomad_as_{{ item }}.bash.j2"
+    dest: "{{ v_dump_dir }}/scripts/nomad_as_{{ item }}.sh"
+    mode: u=rx
+    owner: root
+    group: root

@@ -1,0 +1,61 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Check if the admin password already exists
+  run_once: true
+  register: r_stat_boundary_password
+  ansible.builtin.stat:
+    path: /tmp/boundary.password
+
+- name: If the password doesn't exist, bootstrap the database
+  when: "not r_stat_boundary_password.stat.exists"
+  run_once: true
+  register: r_boundary_database_init
+  failed_when: '"Unable to capture a lock on the database" not in r_boundary_database_init.stderr'
+  ansible.builtin.command: boundary database init -config /etc/boundary.d/boundary.hcl
+
+- name: (extract the password)
+  when: "not r_stat_boundary_password.stat.exists and r_boundary_database_init.rc == 0"
+  run_once: true
+  ansible.builtin.set_fact:
+    f_boundary_password: "{{ r_boundary_database_init.stdout | regex_search('Password:\\s+([^\\n]+)', '\\1') | first }}"
+
+- name: (store it into a file)
+  when: "not r_stat_boundary_password.stat.exists and r_boundary_database_init.rc == 0"
+  run_once: true
+  ansible.builtin.lineinfile:
+    path: /tmp/boundary.password
+    line: "{{ f_boundary_password }}"
+    create: true
+    owner: root
+    group: root
+    mode: u=r
+
+- name: Otherwise read in the token
+  when: r_stat_boundary_password.stat.exists
+  register: r_slurped_boundary_password
+  run_once: true
+  ansible.builtin.slurp:
+    path: /tmp/boundary.password
+
+- name: (and set the fact)
+  when: r_stat_boundary_password.stat.exists
+  run_once: true
+  ansible.builtin.set_fact:
+    f_boundary_password: "{{ r_slurped_boundary_password.content | b64decode | trim }}"
+
+- name: Get Instance Region
+  run_once: true
+  when: 'v_platform == "aws" and f_boundary_password is defined'
+  register: r_curl_aws_region
+  ansible.builtin.command: curl http://169.254.169.254/2021-07-15/meta-data/placement/region
+
+- name: Set Boundary Password via Local AWS CLI
+  become: false
+  run_once: true
+  delegate_to: localhost
+  when: 'v_platform == "aws" and f_boundary_password is defined'
+  ansible.builtin.command: 'aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_boundary_aws_admin_password_secret_name }} --secret-string "{{ f_boundary_password }}"'

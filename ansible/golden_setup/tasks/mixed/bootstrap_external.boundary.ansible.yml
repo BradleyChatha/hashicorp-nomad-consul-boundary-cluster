@@ -1,0 +1,86 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Ensure bastion has correct packages installed
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - pip
+      - libpq-dev
+    update_cache: true
+
+- name: Ensure bastion has psycopg2 installed
+  ansible.builtin.pip:
+    name:
+      - psycopg2
+
+- name: Get Instance Region (AWS)
+  when: 'v_platform == "aws"'
+  run_once: true
+  register: r_curl_aws_region
+  ansible.builtin.command: curl http://169.254.169.254/2021-07-15/meta-data/placement/region
+
+- name: Check if DB credentials exist (AWS)
+  when: 'v_platform == "aws"'
+  failed_when: false
+  register: r_db_secret_check
+  become: false
+  delegate_to: localhost
+  ansible.builtin.command: 'aws secretsmanager get-secret-value --region "{{ r_curl_aws_region.stdout }}" --secret-id "{{ v_boundary_aws_rds_credentials_secret_name }}" --query "SecretString" --output text'
+
+- name: If DB creds exist, then set it as a fact (Generic)
+  when: r_db_secret_check.rc == 0
+  ansible.builtin.set_fact:
+    f_boundary_bootstrap_db_user: '{{ r_db_secret_check.stdout | from_json | json_query("username") }}'
+    f_boundary_bootstrap_db_pass: '{{ r_db_secret_check.stdout | from_json | json_query("password") }}'
+    f_boundary_bootstrap_db_name: '{{ r_db_secret_check.stdout | from_json | json_query("db") }}'
+
+- name: Otherwise, generate a new password (Generic)
+  when: r_db_secret_check.rc != 0
+  ansible.builtin.set_fact:
+    f_boundary_bootstrap_db_user: boundary
+    f_boundary_bootstrap_db_pass: '{{ lookup("community.general.random_string", length=32, special=false) }}'
+    f_boundary_bootstrap_db_name: boundary
+
+- name: And then, create the user (Generic)
+  when: r_db_secret_check.rc != 0
+  community.postgresql.postgresql_user:
+    db: "{{ f_boundary_bootstrap_db_name }}"
+    user: "{{ f_boundary_bootstrap_db_user }}"
+    password: "{{ f_boundary_bootstrap_db_pass }}"
+    login_host: "{{ f_postgres_host }}"
+    login_user: "{{ f_postgres_username }}"
+    login_password: "{{ f_postgres_password }}"
+    port: "{{ f_postgres_port }}"
+    no_password_changes: true
+
+- name: Ensure the user can access the database (Generic)
+  community.postgresql.postgresql_owner:
+    db: "{{ f_boundary_bootstrap_db_name }}"
+    new_owner: "{{ f_boundary_bootstrap_db_user }}"
+    login_host: "{{ f_postgres_host }}"
+    login_user: "{{ f_postgres_username }}"
+    login_password: "{{ f_postgres_password }}"
+    port: "{{ f_postgres_port }}"
+
+- name: Ensure the user is a super user (AWS)
+  when: 'v_platform == "aws"'
+  community.postgresql.postgresql_membership:
+    db: "{{ f_boundary_bootstrap_db_name }}"
+    group: rds_superuser
+    target_role: "{{ f_boundary_bootstrap_db_user }}"
+    login_host: "{{ f_postgres_host }}"
+    login_user: "{{ f_postgres_username }}"
+    login_password: "{{ f_postgres_password }}"
+    port: "{{ f_postgres_port }}"
+
+- name: Store the credentials into the secrets manager (AWS)
+  when: 'v_platform == "aws"'
+  become: false
+  delegate_to: localhost
+  ansible.builtin.shell: |
+    aws secretsmanager put-secret-value --region "{{ r_curl_aws_region.stdout }}" --secret-id {{ v_boundary_aws_rds_credentials_secret_name }} \
+        --secret-string '{ "username": "{{ f_boundary_bootstrap_db_user }}", "password": "{{ f_boundary_bootstrap_db_pass }}", "db": "{{ f_boundary_bootstrap_db_name }}", "host": "{{ f_postgres_host }}", "port": {{ f_postgres_port }} }'

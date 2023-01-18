@@ -1,0 +1,12 @@
+sudo systemctl start nomad
+
+while [ 1 ]
+do
+    output=$(nomad server members 2>&1)
+    if [[ ! $output =~ "Permission denied" ]]; then
+        sleep 5;
+        continue;
+    fi
+
+    break
+done

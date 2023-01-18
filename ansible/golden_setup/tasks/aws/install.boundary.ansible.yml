@@ -1,0 +1,13 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Render userdata script
+  ansible.builtin.template:
+    src: aws/boundary/boundary_userdata.bash.j2
+    dest: /etc/bchatha/scripts/boundary_userdata.sh
+    mode: u=rx
+    owner: root
+    group: root

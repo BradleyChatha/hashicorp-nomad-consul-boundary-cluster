@@ -1,0 +1,16 @@
+disable_mlock = true
+
+worker {
+    public_addr         = "{{ '{{' }} GetPublicIP {{ '}}' }}"
+    name                = "__replace_name"
+    initial_upstreams   = [__replace_initial_upstreams]
+}
+
+listener "tcp" {
+	purpose = "proxy"
+}
+
+kms "awskms" {
+    purpose     = "worker-auth"
+    kms_key_id  = "{{ v_boundary_aws_workerauth_kms_key_id }}"
+}

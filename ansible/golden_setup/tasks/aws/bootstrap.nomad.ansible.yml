@@ -1,0 +1,24 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Get Nomad Token
+  run_once: true
+  register: r_slurp_nomad_token
+  ansible.builtin.slurp:
+    path: /tmp/nomad.token
+
+- name: Get Instance Region
+  run_once: true
+  when: "True" # Keeps the linter happy
+  register: r_curl_aws_region
+  ansible.builtin.command: curl http://169.254.169.254/2021-07-15/meta-data/placement/region
+
+- name: Set Nomad Token Secret via Local AWS CLI
+  become: false
+  run_once: true
+  delegate_to: localhost
+  when: "True" # Keeps the linter happy
+  ansible.builtin.command: 'aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_nomad_aws_admin_token_secret_name }} --secret-string "{{ r_slurp_nomad_token.content | b64decode | trim }}"'

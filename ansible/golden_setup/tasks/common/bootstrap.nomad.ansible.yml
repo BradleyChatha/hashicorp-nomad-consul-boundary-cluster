@@ -1,0 +1,56 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Ensure Nomad servers are running
+  ansible.builtin.systemd:
+    name: nomad
+    state: started
+    enabled: true
+# - name: Bootstrap the ACL system
+
+- name: Wait until Nomad's API port is ready
+  ansible.builtin.wait_for:
+    port: 4646
+
+- name: Check if the Nomad token already exists
+  run_once: true
+  register: r_stat_nomad_token
+  ansible.builtin.stat:
+    path: /tmp/nomad.token
+
+- name: If the token doesn't exist, create it
+  when: "not r_stat_nomad_token.stat.exists"
+  run_once: true
+  register: r_nomad_acl_bootstrap
+  ansible.builtin.command: nomad acl bootstrap
+
+- name: (extract the key)
+  when: "not r_stat_nomad_token.stat.exists"
+  run_once: true
+  ansible.builtin.set_fact:
+    f_nomad_token: "{{ r_nomad_acl_bootstrap.stdout | regex_search('Secret ID\\s+=\\s+([^\\n]+)', '\\1') | first }}"
+
+- name: (store it into a file)
+  when: "not r_stat_nomad_token.stat.exists"
+  run_once: true
+  ansible.builtin.lineinfile:
+    path: /tmp/nomad.token
+    line: "{{ f_nomad_token }}"
+    create: true
+    owner: root
+    group: root
+    mode: u=r
+
+- name: Otherwise read in the token
+  when: r_stat_nomad_token.stat.exists
+  register: r_slurped_nomad_token
+  ansible.builtin.slurp:
+    path: /tmp/nomad.token
+
+- name: (and set the fact)
+  when: r_stat_nomad_token.stat.exists
+  ansible.builtin.set_fact:
+    f_nomad_token: "{{ r_slurped_nomad_token.content | b64decode | trim }}"

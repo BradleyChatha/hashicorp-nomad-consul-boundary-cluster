@@ -1,0 +1,17 @@
+acl {
+    default_policy           = "deny"
+    enabled                  = true
+    enable_token_persistence = true
+    tokens = {
+        #initial_management
+    }
+}
+
+addresses {
+    grpc = "{{ '{{' }} GetPrivateIP {{ '}}' }}"
+}
+
+datacenter          = "{{ v_consul_datacenter }}"
+data_dir            = "/opt/consul"
+leave_on_terminate  = true
+primary_datacenter  = "{{ v_consul_datacenter }}"

@@ -1,0 +1,3 @@
+bucket="bradley-chatha"
+region="eu-west-2"
+dynamodb_table="terraform-lock"

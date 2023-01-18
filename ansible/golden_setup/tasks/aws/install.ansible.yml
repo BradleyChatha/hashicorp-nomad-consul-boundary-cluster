@@ -1,0 +1,25 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: See if the AWS CLI is installed
+  when: "True" # Makes the linter happy
+  register: r_which_aws
+  ansible.builtin.command: which aws
+
+- name: Assert AWS CLI came preinstalled
+  ansible.builtin.assert:
+    that:
+      - r_which_aws.rc == 0
+    fail_msg: Please use an AMI that has been created specifically for AWS, and as such has AWS CLI already installed.
+
+- name: Install Consul for AWS
+  ansible.builtin.include_tasks: install.consul.ansible.yml
+
+- name: Install Boundary for AWS
+  ansible.builtin.include_tasks: install.boundary.ansible.yml
+
+- name: Install Nomad for AWS
+  ansible.builtin.include_tasks: install.nomad.ansible.yml

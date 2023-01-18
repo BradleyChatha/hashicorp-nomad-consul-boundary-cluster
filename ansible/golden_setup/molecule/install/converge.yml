@@ -1,0 +1,9 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include golden_setup"
+      include_role:
+        name: "golden_setup"
+      vars:
+        v_task: install

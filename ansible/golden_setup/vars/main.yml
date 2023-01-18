@@ -1,0 +1,19 @@
+---
+
+v_platform: generic # [generic, aws, gcp, azure] - currently only aws and generic are implemented
+v_task: install # [install, bootstrap, bootstrap_bastion, bootstrap_boundary]
+
+v_nomad_datacenter: dc1
+v_nomad_region: global
+v_nomad_aws_admin_token_secret_name: cluster-nomad-bootstrap-token
+
+v_consul_datacenter: dc1
+v_consul_aws_admin_token_secret_name: cluster-consul-bootstrap-token
+v_consul_aws_client_token_secret_name: cluster-consul-client-token
+
+v_boundary_aws_admin_password_secret_name: cluster-boundary-admin-password
+v_boundary_aws_rds_credentials_secret_name: cluster-boundary-rds-credentials
+v_boundary_aws_root_kms_key_id: alias/cluster-boundary-root
+v_boundary_aws_workerauth_kms_key_id: alias/cluster-boundary-worker-auth
+v_boundary_aws_recovery_kms_key_id: alias/cluster-boundary-recovery
+v_boundary_aws_config_kms_key_id: alias/cluster-boundary-config

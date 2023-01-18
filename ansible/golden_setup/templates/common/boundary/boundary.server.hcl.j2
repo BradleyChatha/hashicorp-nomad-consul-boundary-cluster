@@ -1,0 +1,39 @@
+disable_mlock = true
+
+controller {
+    name = "__replace_name"
+    database {
+        url = "postgres://__replace_url"
+    }
+}
+
+listener "tcp" {
+    address = "{{ '{{' }} GetPrivateIP {{ '}}' }}:9200"
+    purpose = "api"
+    tls_disable = true
+}
+
+listener "tcp" {
+    address = "{{ '{{' }} GetPrivateIP {{ '}}' }}:9201"
+    purpose = "cluster"
+}
+
+kms "awskms" {
+    purpose     = "root"
+    kms_key_id  = "{{ v_boundary_aws_root_kms_key_id }}"
+}
+
+kms "awskms" {
+    purpose     = "worker-auth"
+    kms_key_id  = "{{ v_boundary_aws_workerauth_kms_key_id }}"
+}
+
+kms "awskms" {
+    purpose     = "recovery"
+    kms_key_id  = "{{ v_boundary_aws_recovery_kms_key_id }}"
+}
+
+kms "awskms" {
+    purpose     = "config"
+    kms_key_id  = "{{ v_boundary_aws_config_kms_key_id }}"
+}

@@ -1,0 +1,60 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Author: Bradley Chatha
+
+---
+- name: Check if previous token exists
+  register: r_stat_consul_token
+  ansible.builtin.stat:
+    path: /tmp/consul.token
+
+- name: If the token doesn't exist, create it
+  when: not r_stat_consul_token.stat.exists
+  run_once: true
+  delegate_to: 127.0.0.1
+  ansible.builtin.set_fact:
+    f_consul_token: "{{ 9999999999999999999999 | random | to_uuid }}"
+
+- name: (And put it into a file)
+  when: not r_stat_consul_token.stat.exists
+  ansible.builtin.lineinfile:
+    path: /tmp/consul.token
+    line: "{{ f_consul_token }}"
+    create: true
+    owner: root
+    group: root
+    mode: u=r
+
+- name: If the token does exist, read it
+  when: r_stat_consul_token.stat.exists
+  register: r_slurped_consul_token
+  ansible.builtin.slurp:
+    path: /tmp/consul.token
+
+- name: (And set the fact)
+  when: r_stat_consul_token.stat.exists
+  ansible.builtin.set_fact:
+    f_consul_token: "{{ r_slurped_consul_token.content | b64decode | trim }}"
+
+- name: Setup the token in the configuration
+  ansible.builtin.replace:
+    path: /etc/consul.d/consul.common.hcl
+    regexp: "#initial_management"
+    replace: 'initial_management = "{{ f_consul_token }}"'
+
+- name: Restart Consul
+  ansible.builtin.systemd:
+    name: consul
+    state: restarted
+    enabled: true
+
+- name: Setup Consul to use token
+  when: "True" # Makes the linter happy
+  register: r
+  until: r.rc == 0
+  retries: 12
+  delay: 5
+  ansible.builtin.shell: |
+    export CONSUL_HTTP_TOKEN="{{ f_consul_token }}"
+    consul acl set-agent-token default "{{ f_consul_token }}"
