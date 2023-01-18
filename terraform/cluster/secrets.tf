@@ -1,8 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
-# Author: Bradley Chatha
-
 resource "aws_secretsmanager_secret" "cluster_consul_bootstrap_token" {
   name        = "cluster-consul-bootstrap-token"
   description = "The bootstrap token for the Consul cluster"

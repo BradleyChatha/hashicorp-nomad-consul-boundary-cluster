@@ -1,8 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
-# Author: Bradley Chatha
-
 resource "tls_private_key" "bootstrap_bastion_ssh" {
   count     = var.enable_bootstrap_bastion ? 1 : 0
   algorithm = "RSA"
