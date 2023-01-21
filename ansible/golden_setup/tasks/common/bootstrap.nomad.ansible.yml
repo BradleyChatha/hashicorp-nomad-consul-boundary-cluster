@@ -41,11 +41,13 @@
 
 - name: Otherwise read in the token
   when: r_stat_nomad_token.stat.exists
+  run_once: true
   register: r_slurped_nomad_token
   ansible.builtin.slurp:
     path: /tmp/nomad.token
 
 - name: (and set the fact)
   when: r_stat_nomad_token.stat.exists
+  run_once: true
   ansible.builtin.set_fact:
     f_nomad_token: "{{ r_slurped_nomad_token.content | b64decode | trim }}"

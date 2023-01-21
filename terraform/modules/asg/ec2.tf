@@ -14,6 +14,11 @@ resource "aws_launch_template" "golden" {
   vpc_security_group_ids               = [aws_security_group.asg.id]
   user_data                            = base64encode(var.user_data)
   update_default_version               = true
+
+  tag_specifications {
+    resource_type = "instance"
+    tags          = var.instance_tags
+  }
 }
 
 resource "aws_autoscaling_group" "asg" {
@@ -24,6 +29,8 @@ resource "aws_autoscaling_group" "asg" {
   desired_capacity      = var.stop_wasting_my_money ? 0 : var.desired_capacity
   desired_capacity_type = "units"
   default_cooldown      = 15
+  health_check_type     = var.target_group_arn == null ? "ELB" : "EC2"
+  target_group_arns     = var.target_group_arn == null ? [] : [var.target_group_arn]
   termination_policies  = ["OldestLaunchTemplate", "OldestInstance"]
   vpc_zone_identifier   = var.subnet_ids
 

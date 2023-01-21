@@ -36,10 +36,6 @@ module "iam" {
       kms_key_arns = [aws_kms_key.keys["cluster-boundary-worker-auth"].arn]
     }
 
-    boundary_client = {
-      kms_key_arns = [aws_kms_key.keys["cluster-boundary-worker-auth"].arn]
-    }
-
     traefik = {
       secrets_read_only = [aws_secretsmanager_secret.cluster_consul_traefik_token.arn]
     }
@@ -71,7 +67,9 @@ module "iam" {
       services     = ["ec2"]
 
       policies = [
-        "boundary_server"
+        "hashicorp_cloud_autojoin",
+        "consul_client",
+        "boundary_server",
       ]
     }
 
@@ -89,7 +87,9 @@ module "iam" {
       services     = ["ec2"]
 
       policies = [
-        "traefik"
+        "hashicorp_cloud_autojoin",
+        "consul_client",
+        "traefik",
       ]
     }
 

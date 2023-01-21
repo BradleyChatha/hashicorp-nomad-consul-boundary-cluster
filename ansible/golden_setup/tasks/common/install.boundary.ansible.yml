@@ -58,3 +58,11 @@
     mode: u=rx
     owner: root
     group: root
+
+- name: Render Consul service file
+  ansible.builtin.template:
+    src: "common/boundary/service.boundary.hcl.j2"
+    dest: "{{ v_dump_dir }}/config/service.boundary.hcl"
+    mode: u=r
+    owner: boundary
+    group: boundary

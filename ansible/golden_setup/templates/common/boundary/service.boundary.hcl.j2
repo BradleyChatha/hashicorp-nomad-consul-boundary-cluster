@@ -1,0 +1,14 @@
+service {
+    name = "boundary-ui"
+    port = 9200
+    tags = ["traefik.http.routers.boundary-ui.rule=Host(`{{ v_boundary_ui_domain }}`)"]
+
+    checks = [{
+        id       = "http"
+        name     = "http"
+        http     = "http://__replace_local_ip:9200" # Boundary's UI is hosted on the private IP, but not on localhost, so it needs a substitution
+        method   = "GET"
+        interval = "30s"
+        timeout  = "1s"
+    }]
+}

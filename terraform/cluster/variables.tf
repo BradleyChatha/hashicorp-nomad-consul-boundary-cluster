@@ -12,6 +12,14 @@ variable "boundary_rds_instance_type" {
   default = "db.t4g.micro"
 }
 
-variable "enable_bootstrap_bastion" {
+variable "enable_bootstrap_resources" {
   type = bool
+}
+
+variable "finished_bootstrapping" {
+  type = bool
+}
+
+variable "root_domain_name" {
+  type = string
 }

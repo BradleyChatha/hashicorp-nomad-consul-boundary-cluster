@@ -1,5 +1,5 @@
 locals {
-  enable_ansible_role_development_resources = 1
+  enable_ansible_role_development_resources = 0
 }
 
 resource "tls_private_key" "dev_ssh" {
@@ -95,7 +95,7 @@ ${server.public_ip} ansible_connection=ssh ansible_user=admin ansible_ssh_privat
 ${client.public_ip} ansible_connection=ssh ansible_user=admin ansible_ssh_private_key_file=generated/dev_ssh.pem 
 %{endfor}
 [bastion]
-%{if var.enable_bootstrap_bastion}
+%{if var.enable_bootstrap_resources}
 ${aws_instance.bootstrap_bastion[0].public_ip} ansible_connection=ssh ansible_user=admin ansible_ssh_private_key_file=generated/bootstrap_bastion_ssh_eu-west-1.pem f_postgres_username=${aws_db_instance.boundary.username} f_postgres_password=${aws_db_instance.boundary.password} f_postgres_host=${aws_db_instance.boundary.address} f_postgres_port=${aws_db_instance.boundary.port} f_postgres_db_name=${aws_db_instance.boundary.db_name}
 %{endif}
 [boundary_servers]

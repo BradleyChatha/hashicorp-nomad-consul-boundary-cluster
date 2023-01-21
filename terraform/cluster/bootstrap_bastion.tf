@@ -1,24 +1,24 @@
 resource "tls_private_key" "bootstrap_bastion_ssh" {
-  count     = var.enable_bootstrap_bastion ? 1 : 0
+  count     = var.enable_bootstrap_resources ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "local_sensitive_file" "bootstrap_bastion_ssh" {
-  count           = var.enable_bootstrap_bastion ? 1 : 0
+  count           = var.enable_bootstrap_resources ? 1 : 0
   content         = tls_private_key.bootstrap_bastion_ssh[0].private_key_openssh
   file_permission = 400
   filename        = "../../ansible/generated/bootstrap_bastion_ssh_${data.aws_region.current.name}.pem"
 }
 
 resource "aws_key_pair" "bootstrap_bastion_ssh" {
-  count           = var.enable_bootstrap_bastion ? 1 : 0
+  count           = var.enable_bootstrap_resources ? 1 : 0
   key_name_prefix = "bchatha-nomad-cluster-bootstrap-bastion"
   public_key      = tls_private_key.bootstrap_bastion_ssh[0].public_key_openssh
 }
 
 resource "aws_security_group" "bootstrap_bastion_ssh" {
-  count       = var.enable_bootstrap_bastion ? 1 : 0
+  count       = var.enable_bootstrap_resources ? 1 : 0
   name_prefix = "bchatha-nomad-cluster-bootstrap-bastion"
   vpc_id      = module.vpc.vpc.id
   ingress {
@@ -47,7 +47,7 @@ resource "aws_security_group" "bootstrap_bastion_ssh" {
 }
 
 resource "aws_instance" "bootstrap_bastion" {
-  count                  = var.enable_bootstrap_bastion ? 1 : 0
+  count                  = var.enable_bootstrap_resources ? 1 : 0
   ami                    = "ami-09394f54f125933d5"
   instance_type          = "t4g.micro"
   key_name               = aws_key_pair.bootstrap_bastion_ssh[0].key_name

@@ -12,6 +12,7 @@ v_consul_aws_admin_token_secret_name: cluster-consul-bootstrap-token
 v_consul_aws_client_token_secret_name: cluster-consul-client-token
 v_consul_aws_traefik_token_secret_name: cluster-consul-traefik-token
 
+v_boundary_ui_domain: boundary.chatha.dev
 v_boundary_aws_admin_password_secret_name: cluster-boundary-admin-password
 v_boundary_aws_rds_credentials_secret_name: cluster-boundary-rds-credentials
 v_boundary_aws_root_kms_key_id: alias/cluster-boundary-root

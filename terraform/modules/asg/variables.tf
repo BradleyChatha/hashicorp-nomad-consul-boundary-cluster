@@ -55,3 +55,13 @@ variable "public_ingress_ports" {
   type    = set(string)
   default = []
 }
+
+variable "target_group_arn" {
+  type    = any # string or null
+  default = null
+}
+
+variable "instance_tags" {
+  type    = map(string)
+  default = { dummy = "s" }
+}
