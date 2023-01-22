@@ -16,3 +16,9 @@ variable "roles" {
     service_role = optional(bool, false)
   }))
 }
+
+variable "users" {
+  type = map(object({
+    policies = set(string)
+  }))
+}

@@ -1,7 +1,10 @@
 service {
     name = "boundary-ui"
     port = 9200
-    tags = ["traefik.http.routers.boundary-ui.rule=Host(`{{ v_boundary_ui_domain }}`)"]
+    tags = [
+        "traefik.http.routers.boundary-ui.rule=Host(`{{ v_boundary_ui_domain }}`)",
+        "traefik.http.routers.boundary-ui.tls=true",
+    ]
 
     checks = [{
         id       = "http"

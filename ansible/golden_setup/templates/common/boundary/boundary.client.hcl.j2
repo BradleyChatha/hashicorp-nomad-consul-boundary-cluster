@@ -1,13 +1,14 @@
 disable_mlock = true
 
 worker {
-    public_addr         = "{{ '{{' }} GetPublicIP {{ '}}' }}"
+    public_addr         = "__replace_public_addr" # Annoyingly, the way EC2 instances are setup seems to prevent go-sockaddr from seeing the public IP properly, so we have to do a replace in the user data.
     name                = "__replace_name"
     initial_upstreams   = [__replace_initial_upstreams]
 }
 
 listener "tcp" {
 	purpose = "proxy"
+    address = "__replace_private_addr:9202"
 }
 
 kms "awskms" {

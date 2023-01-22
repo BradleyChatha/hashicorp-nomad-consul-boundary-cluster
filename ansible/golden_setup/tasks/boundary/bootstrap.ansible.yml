@@ -1,4 +1,7 @@
 ---
+- name: Wait for connection
+  ansible.builtin.wait_for_connection:
+
 - name: Check if the admin password already exists
   run_once: true
   register: r_stat_boundary_password
@@ -9,7 +12,7 @@
   when: "not r_stat_boundary_password.stat.exists"
   run_once: true
   register: r_boundary_database_init
-  failed_when: '"Unable to capture a lock on the database" not in r_boundary_database_init.stderr'
+  failed_when: '"Unable to capture a lock on the database" not in r_boundary_database_init.stderr and r_boundary_database_init.rc != 0'
   ansible.builtin.command: boundary database init -config /etc/boundary.d/boundary.hcl
 
 - name: (extract the password)
@@ -54,3 +57,49 @@
   delegate_to: localhost
   when: 'v_platform == "aws" and f_boundary_password is defined'
   ansible.builtin.command: 'aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_boundary_aws_admin_password_secret_name }} --secret-string "{{ f_boundary_password }}"'
+
+- name: Get Boundary Discoverer IAM keys via Local AWS CLI
+  become: false
+  run_once: true
+  delegate_to: localhost
+  register: r_boundary_create_access_key
+  when: 'v_platform == "aws" and f_boundary_password is defined'
+  ansible.builtin.command: aws iam create-access-key --region {{ r_curl_aws_region.stdout }} --user-name boundary-discoverer-{{ r_curl_aws_region.stdout }}
+
+- name: (and set the facts)
+  run_once: true
+  when: 'v_platform == "aws" and f_boundary_password is defined'
+  ansible.builtin.set_fact:
+    f_boundary_iam_access_key: "{{ r_boundary_create_access_key.stdout | from_json | json_query('AccessKey.AccessKeyId') }}"
+    f_boundary_iam_secret_access_key: "{{ r_boundary_create_access_key.stdout | from_json | json_query('AccessKey.SecretAccessKey') }}"
+
+- name: Teach Boundary how to connect to Nomad and Consul UIs
+  run_once: true
+  when: 'v_platform == "aws" and f_boundary_password is defined'
+  ansible.builtin.shell: |
+    export BOUNDARY_ADDR="http://$(hostname -I | sed 's/ //'):9200"
+    authMethodId=$(boundary auth-methods list | perl -n -e'/ID:\s+([^\s]+)/ && print $1')
+
+    export BOUNDARY_PASSWORD="{{ f_boundary_password }}"
+    export BOUNDARY_TOKEN=$(boundary authenticate password -login-name admin -auth-method-id $authMethodId -password env://BOUNDARY_PASSWORD -keyring-type=none | perl -n -e '/(at_[^\s]+)/ && print $1')
+
+    orgScopeId=$(boundary scopes list -token env://BOUNDARY_TOKEN | perl -n -e'/ID:\s+(o_[^\s]+)/ && print $1')
+
+    projectScopeId=$(boundary scopes create -token env://BOUNDARY_TOKEN -name cluster -scope-id $orgScopeId | perl -n -e'/ID:\s+(p_[^\s]+)/ && print $1')
+
+    export BOUNDARY_ACCESS_KEY_ID='{{ f_boundary_iam_access_key | regex_replace("\\", "\\\\") }}'
+    export BOUNDARY_SECRET_ACCESS_KEY='{{ f_boundary_iam_secret_access_key | regex_replace("\\", "\\\\") }}'
+    export AWS_ACCESS_KEY_ID='{{ f_boundary_iam_access_key | regex_replace("\\", "\\\\") }}'
+    export AWS_SECRET_ACCESS_KEY='{{ f_boundary_iam_secret_access_key | regex_replace("\\", "\\\\") }}'
+    sleep 60
+    aws sts get-caller-identity
+
+    hostCatalogId=$(boundary host-catalogs create plugin -token env://BOUNDARY_TOKEN -plugin-name aws -scope-id $projectScopeId -name aws-instances -attr disable_credential_rotation=true -attr region="{{ r_curl_aws_region.stdout }}" -secret access_key_id=env://BOUNDARY_ACCESS_KEY_ID -secret secret_access_key=env://BOUNDARY_SECRET_ACCESS_KEY | perl -n -e'/ID:\s+(hcplg_[^\s]+)/ && print $1')
+    nomadHostSetId=$(boundary host-sets create plugin -token env://BOUNDARY_TOKEN -host-catalog-id $hostCatalogId -name nomad-servers -attr filters=tag:bchatha:cluster:nomad:role=server | perl -n -e'/ID:\s+(hsplg_[^\s]+)/ && print $1')
+    consulHostSetId=$(boundary host-sets create plugin -token env://BOUNDARY_TOKEN -host-catalog-id $hostCatalogId -name consul-servers -attr filters=tag:bchatha:cluster:consul:role=server | perl -n -e'/ID:\s+(hsplg_[^\s]+)/ && print $1')
+
+    nomadTargetId=$(boundary targets create tcp -token env://BOUNDARY_TOKEN -name nomad-ui -scope-id $projectScopeId -default-port 4646 | perl -n -e'/ID:\s+(ttcp_[^\s]+)/ && print $1')
+    consulTargetId=$(boundary targets create tcp -token env://BOUNDARY_TOKEN -name consul-ui -scope-id $projectScopeId -default-port 8500 | perl -n -e'/ID:\s+(ttcp_[^\s]+)/ && print $1')
+
+    boundary targets set-host-sources -token env://BOUNDARY_TOKEN -host-source $nomadHostSetId -id $nomadTargetId
+    boundary targets set-host-sources -token env://BOUNDARY_TOKEN -host-source $consulHostSetId -id $consulTargetId

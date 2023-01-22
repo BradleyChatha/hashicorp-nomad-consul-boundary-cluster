@@ -23,3 +23,7 @@ variable "finished_bootstrapping" {
 variable "root_domain_name" {
   type = string
 }
+
+variable "allow_instant_delete_of_secrets" {
+  type = bool
+}

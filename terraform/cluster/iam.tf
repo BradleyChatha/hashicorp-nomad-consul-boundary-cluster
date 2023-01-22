@@ -41,6 +41,14 @@ module "iam" {
     }
   }
 
+  users = {
+    boundary-discoverer = {
+      policies = [
+        "hashicorp_cloud_autojoin",
+      ]
+    }
+  }
+
   roles = {
     cluster_server = {
       service_role = true
@@ -78,6 +86,7 @@ module "iam" {
       services     = ["ec2"]
 
       policies = [
+        "hashicorp_cloud_autojoin",
         "boundary_client"
       ]
     }

@@ -108,7 +108,9 @@ module "boundary_servers" {
   user_data = <<-HERE
     #!/usr/bin/bash
     sudo bash /etc/bchatha/scripts/boundary_as_server.sh
+    sudo bash /etc/bchatha/scripts/consul_as_client.sh
     sudo bash /etc/bchatha/scripts/boundary_userdata.sh
+    sudo bash /etc/bchatha/scripts/consul_userdata.sh
   HERE
 }
 
@@ -123,8 +125,8 @@ module "boundary_clients" {
   min_size              = 1
   vpc_id                = module.vpc.vpc.id
   cidr                  = var.cidr
-  public_ingress_ports  = [9200]
-  # dbg_ssh_key_name      = aws_key_pair.bootstrap_bastion_ssh[0].key_name
+  public_ingress_ports  = [9202]
+  dbg_ssh_key_name      = module.boundary_servers.ssh_key_pair.key_name
   subnet_ids = [
     module.vpc.subnets.public_1.id,
     module.vpc.subnets.public_2.id,
@@ -135,10 +137,8 @@ module "boundary_clients" {
   }
   user_data = <<-HERE
     #!/usr/bin/bash
-    sudo bash /etc/bchatha/scripts/boundary_as_server.sh
-    sudo bash /etc/bchatha/scripts/consul_as_client.sh
+    sudo bash /etc/bchatha/scripts/boundary_as_client.sh
     sudo bash /etc/bchatha/scripts/boundary_userdata.sh
-    sudo bash /etc/bchatha/scripts/consul_userdata.sh
   HERE
 }
 
@@ -155,7 +155,7 @@ module "ingress" {
   vpc_id                = module.vpc.vpc.id
   cidr                  = var.cidr
   target_group_arn      = aws_lb_target_group.ingress.arn
-  dbg_ssh_key_name      = aws_key_pair.bootstrap_bastion_ssh[0].key_name
+  # dbg_ssh_key_name      = aws_key_pair.bootstrap_bastion_ssh[0].key_name
   subnet_ids = [
     module.vpc.subnets.public_1.id,
     module.vpc.subnets.public_2.id,

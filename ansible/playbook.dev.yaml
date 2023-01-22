@@ -30,6 +30,10 @@
       ansible.builtin.systemd:
         name: boundary
         state: stopped
+    - name: Clear Boundary password
+      ansible.builtin.file:
+        path: /tmp/boundary.password
+        state: absent
 
 - name: Install
   hosts: all
@@ -43,7 +47,27 @@
 
 - name: Bootstrap External Services via Bastion
   hosts: bastion
+  become: true
   tasks:
+    - name: Ensure bastion has correct packages installed
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - pip
+          - libpq-dev
+        update_cache: true
+    - name: Ensure bastion has psycopg2 installed
+      ansible.builtin.pip:
+        name:
+          - psycopg2
+    - name: Drop old database
+      community.postgresql.postgresql_db:
+        db: boundary
+        login_host: "{{ f_postgres_host }}"
+        login_user: "{{ f_postgres_username }}"
+        login_password: "{{ f_postgres_password }}"
+        port: "{{ f_postgres_port }}"
+        state: absent
     - name: Bootstrap
       vars:
         v_platform: aws
@@ -72,6 +96,7 @@
       ansible.builtin.shell: |
         sudo bash /etc/bchatha/scripts/consul_as_server.sh
         sudo bash /etc/bchatha/scripts/nomad_as_server.sh
+        sudo rm /tmp/consul.token.type
 
 - name: Bootstrap Servers
   hosts: servers

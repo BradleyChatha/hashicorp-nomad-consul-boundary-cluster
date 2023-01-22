@@ -1,0 +1,16 @@
+---
+- name: Ensure we're safe to delete the bootstrap servers
+  hosts: servers
+  tasks:
+    - name: Ensure we have 6 consul servers
+      when: "True" # Keeps the linter happy
+      ansible.builtin.shell:
+        executable: /usr/bin/bash
+        cmd: |
+          while [ 1 ]
+          do
+            serverCount="$(consul members | grep server | wc -l)"
+            if [[ $serverCount -eq "6" ]]; then
+              break
+            fi
+          done

@@ -40,6 +40,15 @@
     f_boundary_bootstrap_db_pass: '{{ lookup("community.general.random_string", length=32, special=false) }}'
     f_boundary_bootstrap_db_name: boundary
 
+- name: Ensure database exists
+  community.postgresql.postgresql_db:
+    db: "{{ f_boundary_bootstrap_db_name }}"
+    login_host: "{{ f_postgres_host }}"
+    login_user: "{{ f_postgres_username }}"
+    login_password: "{{ f_postgres_password }}"
+    port: "{{ f_postgres_port }}"
+    state: present
+
 - name: And then, create the user (Generic)
   when: r_db_secret_check.rc != 0
   community.postgresql.postgresql_user:

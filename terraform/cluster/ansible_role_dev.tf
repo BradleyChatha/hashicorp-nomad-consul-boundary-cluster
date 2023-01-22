@@ -1,5 +1,5 @@
 locals {
-  enable_ansible_role_development_resources = 0
+  enable_ansible_role_development_resources = 1
 }
 
 resource "tls_private_key" "dev_ssh" {

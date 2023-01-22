@@ -18,16 +18,23 @@ do
             continue;
         fi
 
-        serverIps=$(echo $boundaryServers | jq '.Reservations[].Instances[].PrivateIpAddress' | paste -sd "," -)
+        serverIps=$(echo $boundaryServers | jq '.Reservations[].Instances[].PrivateIpAddress | select( . != null )' | paste -sd "," -)
         if [ $? -ne 0 ]; then
             sleep 5;
             continue;
         fi
 
+        publicIp=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
+        
         sed -i "s/__replace_initial_upstreams/$serverIps/g" /etc/boundary.d/boundary.hcl
+        sed -i "s/__replace_public_addr/$publicIp/g" /etc/boundary.d/boundary.hcl
+        sed -i "s/__replace_private_addr/$(hostname -I)/g" /etc/boundary.d/boundary.hcl
     fi
 
     break
 done
 
 sudo systemctl start boundary
+
+echo "{{ v_consul_aws_client_token_secret_name }}" | sudo tee /tmp/consul.token.name
+chmod +r /tmp/consul.token.name

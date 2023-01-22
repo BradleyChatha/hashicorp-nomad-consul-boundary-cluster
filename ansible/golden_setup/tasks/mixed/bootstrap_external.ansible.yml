@@ -1,3 +1,6 @@
 ---
+- name: Wait for connection
+  ansible.builtin.wait_for_connection:
+
 - name: Bootstrap Boundary RDS
   ansible.builtin.include_tasks: bootstrap_external.boundary.ansible.yml

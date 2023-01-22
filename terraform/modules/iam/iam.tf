@@ -1,5 +1,6 @@
 locals {
   flat_list_of_role_policy_mappings = flatten([for k, v in var.roles : [for p in v.policies : { role : k, policy : p }]])
+  flat_list_of_user_policy_mappings = flatten([for k, v in var.users : [for p in v.policies : { user : k, policy : p }]])
 }
 
 resource "aws_iam_policy" "policies" {
@@ -75,4 +76,15 @@ resource "aws_iam_instance_profile" "profiles" {
   for_each    = { for k, v in var.roles : k => v if v.service_role }
   name_prefix = each.key
   role        = aws_iam_role.roles[each.key].name
+}
+
+resource "aws_iam_user" "users" {
+  for_each = var.users
+  name     = "${each.key}-${data.aws_region.current.name}"
+}
+
+resource "aws_iam_user_policy_attachment" "user_policies" {
+  count      = length(local.flat_list_of_user_policy_mappings)
+  user       = aws_iam_user.users[local.flat_list_of_user_policy_mappings[count.index].user].id
+  policy_arn = aws_iam_policy.policies[local.flat_list_of_user_policy_mappings[count.index].policy].arn
 }

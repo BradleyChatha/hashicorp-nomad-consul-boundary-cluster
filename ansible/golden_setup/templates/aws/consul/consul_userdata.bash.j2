@@ -11,13 +11,14 @@ do
         continue;
     fi
 
-    CONSUL_HTTP_TOKEN=$token consul acl set-agent-token default "$token"
+    tokenType=$(cat /tmp/consul.token.type || echo -n default)
+    CONSUL_HTTP_TOKEN=$token consul acl set-agent-token "$tokenType" "$token"
     if [ $? -ne 0 ]; then
         sleep 5;
         continue;
     fi
 
-    consul members
+    CONSUL_HTTP_TOKEN=$token consul members
     if [ $? -ne 0 ]; then
         sleep 5;
         continue;

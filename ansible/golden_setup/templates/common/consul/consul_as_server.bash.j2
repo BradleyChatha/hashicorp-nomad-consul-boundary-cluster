@@ -1,3 +1,5 @@
 mv {{ v_dump_dir }}/config/consul.server.hcl /etc/consul.d/
 echo "{{ v_consul_aws_admin_token_secret_name }}" | sudo tee /tmp/consul.token.name
+echo "agent" | sudo tee /tmp/consul.token.type
 chmod +r /tmp/consul.token.name
+chmod +r /tmp/consul.token.type
