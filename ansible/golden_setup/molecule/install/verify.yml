@@ -4,7 +4,7 @@
 - name: Verify
   hosts: all
   become: true
-  gather_facts: false
+   
   vars:
     v_files_that_should_exist:
       # region Nomad

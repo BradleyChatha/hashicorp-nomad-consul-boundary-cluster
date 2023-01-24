@@ -1,6 +1,7 @@
 locals {
-  flat_list_of_role_policy_mappings = flatten([for k, v in var.roles : [for p in v.policies : { role : k, policy : p }]])
-  flat_list_of_user_policy_mappings = flatten([for k, v in var.users : [for p in v.policies : { user : k, policy : p }]])
+  flat_list_of_role_policy_mappings     = flatten([for k, v in var.roles : [for p in v.policies : { role : k, policy : p }]])
+  flat_list_of_aws_role_policy_mappings = flatten([for k, v in var.roles : [for p in v.aws_policies : { role : k, policy : p }]])
+  flat_list_of_user_policy_mappings     = flatten([for k, v in var.users : [for p in v.policies : { user : k, policy : p }]])
 }
 
 resource "aws_iam_policy" "policies" {
@@ -70,6 +71,12 @@ resource "aws_iam_role_policy_attachment" "role_policies" {
   count      = length(local.flat_list_of_role_policy_mappings)
   role       = aws_iam_role.roles[local.flat_list_of_role_policy_mappings[count.index].role].id
   policy_arn = aws_iam_policy.policies[local.flat_list_of_role_policy_mappings[count.index].policy].arn
+}
+
+resource "aws_iam_role_policy_attachment" "aws_role_policies" {
+  count      = length(local.flat_list_of_aws_role_policy_mappings)
+  role       = aws_iam_role.roles[local.flat_list_of_aws_role_policy_mappings[count.index].role].id
+  policy_arn = "arn:aws:iam::aws:policy/${local.flat_list_of_aws_role_policy_mappings[count.index].policy}"
 }
 
 resource "aws_iam_instance_profile" "profiles" {

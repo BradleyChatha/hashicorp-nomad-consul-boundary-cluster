@@ -1,3 +1,5 @@
 .terraform
 ansible/generated/*.pem
 ansible/generated/*.inventory
+ansible/generated/*.yaml
+ansible/generated/_*

@@ -38,7 +38,7 @@ resource "random_password" "boundary_admin_username" {
   length  = 32
   lower   = true
   upper   = true
-  numeric = true
+  numeric = false
   special = false
 }
 

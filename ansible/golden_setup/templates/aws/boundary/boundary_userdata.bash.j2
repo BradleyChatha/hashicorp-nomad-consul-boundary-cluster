@@ -12,29 +12,16 @@ do
         postgresUrl="$(echo $postgresCreds | jq -r '.username')\\:$(echo $postgresCreds | jq -r '.password')\\@$(echo $postgresCreds | jq -r '.host')\\:$(echo $postgresCreds | jq -r '.port')\\/$(echo $postgresCreds | jq -r '.db')"
         sed -i "s/__replace_url/$postgresUrl/g" /etc/boundary.d/boundary.hcl
     else
-        boundaryServers=$(aws ec2 describe-instances --filters "Name=tag:bchatha:cluster:boundary:role,Values=server" --region $AWS_REGION)
-        if [ $? -ne 0 ]; then
-            sleep 5;
-            continue;
-        fi
-
-        serverIps=$(echo $boundaryServers | jq '.Reservations[].Instances[].PrivateIpAddress | select( . != null )' | paste -sd "," -)
-        if [ $? -ne 0 ]; then
-            sleep 5;
-            continue;
-        fi
-
         publicIp=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
         
-        sed -i "s/__replace_initial_upstreams/$serverIps/g" /etc/boundary.d/boundary.hcl
         sed -i "s/__replace_public_addr/$publicIp/g" /etc/boundary.d/boundary.hcl
-        sed -i "s/__replace_private_addr/$(hostname -I)/g" /etc/boundary.d/boundary.hcl
+        sed -i "s/__replace_private_addr/$(hostname -I | sed 's/ //')/g" /etc/boundary.d/boundary.hcl
     fi
 
     break
 done
 
-sudo systemctl start boundary
+sudo systemctl restart boundary
 
 echo "{{ v_consul_aws_client_token_secret_name }}" | sudo tee /tmp/consul.token.name
 chmod +r /tmp/consul.token.name

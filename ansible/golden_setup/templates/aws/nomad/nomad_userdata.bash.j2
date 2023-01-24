@@ -1,7 +1,24 @@
-sudo systemctl start nomad
+AWS_REGION=$(curl http://169.254.169.254/2021-07-15/meta-data/placement/region)
 
 while [ 1 ]
 do
+    consulTokenType=$(cat /tmp/consul.token.type || echo -n default)
+    if [[ "$consulTokenType" != "default" ]]; then
+        secretName=$(cat /tmp/consul.token.name)
+        token=$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$secretName" --query "SecretString" --output text)
+        if [ $? -ne 0 ]; then
+            sleep 5;
+            continue;
+        fi
+
+        echo "" | sudo tee -a /etc/nomad.d/nomad.server.hcl
+        echo "consul {" | sudo tee -a /etc/nomad.d/nomad.server.hcl
+        echo "token = \"$token\"" | sudo tee -a /etc/nomad.d/nomad.server.hcl > /dev/null
+        echo "}" | sudo tee -a /etc/nomad.d/nomad.server.hcl
+    fi
+
+    sudo systemctl start nomad
+
     output=$(nomad server members 2>&1)
     if [[ ! $output =~ "Permission denied" ]]; then
         sleep 5;

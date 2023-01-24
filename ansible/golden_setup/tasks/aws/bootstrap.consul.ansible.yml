@@ -63,3 +63,6 @@
   when: "True" # Keeps the linter happy
   delegate_to: localhost
   ansible.builtin.command: "aws secretsmanager put-secret-value --region {{ r_curl_aws_region.stdout }} --secret-id {{ v_consul_aws_traefik_token_secret_name }} --secret-string {{ r_traefik_token.stdout }}"
+
+- name: Unset the default token
+  ansible.builtin.command: consul acl set-agent-token default 00000000-0000-0000-0000-000000000002

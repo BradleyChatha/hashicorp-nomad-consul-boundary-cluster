@@ -1,29 +1,17 @@
 ---
+- name: Wait for connection
+  hosts:
+    - bastion
+    - boundary_servers
+    - servers
+  gather_facts: false
+  tasks:
+    - name: Wait
+      ansible.builtin.wait_for_connection:
+
 - name: Bootstrap External Services via Bastion
   hosts: bastion
   tasks:
-    # - name: Ensure bastion has correct packages installed
-    #   become: true
-    #   ansible.builtin.apt:
-    #     name:
-    #       - postgresql
-    #       - pip
-    #       - libpq-dev
-    #     update_cache: true
-    # - name: Ensure bastion has psycopg2 installed
-    #   become: true
-    #   ansible.builtin.pip:
-    #     name:
-    #       - psycopg2
-    # - name: Drop old database
-    #   become: true
-    #   community.postgresql.postgresql_db:
-    #     db: boundary
-    #     login_host: "{{ f_postgres_host }}"
-    #     login_user: "{{ f_postgres_username }}"
-    #     login_password: "{{ f_postgres_password }}"
-    #     port: "{{ f_postgres_port }}"
-    #     state: absent
     - name: Bootstrap
       vars:
         v_platform: aws

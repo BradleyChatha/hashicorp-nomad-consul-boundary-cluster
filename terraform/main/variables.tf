@@ -8,12 +8,12 @@ variable "enable_bootstrap_resources" {
   default = true
 }
 
-variable "finished_bootstrapping" {
-  type    = bool
-  default = false
-}
-
 variable "root_domain_name" {
   type    = string
   default = "chatha.dev"
+}
+
+variable "ssh_cidr" {
+  type    = string
+  default = "0.0.0.0/0"
 }

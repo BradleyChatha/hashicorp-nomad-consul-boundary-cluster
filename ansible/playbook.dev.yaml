@@ -1,6 +1,24 @@
 ---
+- name: Wait for connection
+  hosts:
+    - servers
+    - clients
+    - boundary_servers
+    - boundary_clients
+    - ingress
+  gather_facts: false
+  tasks:
+    - name: Wait
+      ansible.builtin.wait_for_connection:
+
 - name: Clear old data
-  hosts: all
+  hosts:
+    - servers
+    - clients
+    - boundary_servers
+    - boundary_clients
+    - ingress
+  tags: clear
   become: true
   tasks:
     - name: Stop Consul
@@ -36,7 +54,13 @@
         state: absent
 
 - name: Install
-  hosts: all
+  tags: install
+  hosts:
+    - servers
+    - clients
+    - boundary_servers
+    - boundary_clients
+    - ingress
   tasks:
     - name: Run role
       vars:
@@ -46,6 +70,7 @@
         name: golden_setup
 
 - name: Bootstrap External Services via Bastion
+  tags: bootstrap_bastion
   hosts: bastion
   become: true
   tasks:
@@ -76,6 +101,7 @@
         name: golden_setup
 
 - name: Bootstrap Boundary
+  tags: bootstrap_boundary
   hosts: boundary_servers
   tasks:
     - name: Configure
@@ -90,6 +116,7 @@
         name: golden_setup
 
 - name: Start Servers
+  tags: start_servers
   hosts: servers
   tasks:
     - name: Start
@@ -99,6 +126,7 @@
         sudo rm /tmp/consul.token.type
 
 - name: Bootstrap Servers
+  tags: bootstrap_servers
   hosts: servers
   tasks:
     - name: Bootstrap
@@ -110,19 +138,48 @@
     - name: Run userdata
       ansible.builtin.shell: |
         sudo bash /etc/bchatha/scripts/consul_userdata.sh
-        sudo bash /etc/bchatha/scripts/boundary_userdata.sh
         sudo bash /etc/bchatha/scripts/nomad_userdata.sh
+
+- name: Start Ingress
+  tags: start_ingress
+  hosts: ingress
+  tasks:
+    - name: Start
+      ansible.builtin.shell: |
+        sudo bash /etc/bchatha/scripts/consul_as_client.sh
+        sudo bash /etc/bchatha/scripts/consul_userdata.sh
         sudo bash /etc/bchatha/scripts/traefik_userdata.sh
 
 - name: Start Clients
+  tags: start_clients
   hosts: clients
   tasks:
     - name: Start
       ansible.builtin.shell:
         cmd: |
           sudo bash /etc/bchatha/scripts/consul_as_client.sh
-          sudo bash /etc/bchatha/scripts/consul_userdata.sh
           sudo bash /etc/bchatha/scripts/nomad_as_client.sh
+          sudo bash /etc/bchatha/scripts/consul_userdata.sh
           sudo bash /etc/bchatha/scripts/nomad_userdata.sh
+
+- name: Start Boundary Clients
+  tags: start_boundary_clients
+  hosts: boundary_clients
+  tasks:
+    - name: Start
+      ansible.builtin.shell:
+        cmd: |
           sudo bash /etc/bchatha/scripts/boundary_as_client.sh
+          sudo bash /etc/bchatha/scripts/boundary_userdata.sh
+
+- name: Start Boundary Servers (again)
+  tags: start_boundary_servers
+  hosts: boundary_servers
+  tasks:
+    - name: Start
+      ansible.builtin.shell:
+        cmd: |
+          sudo bash /etc/bchatha/scripts/boundary_as_server.sh
+          sudo bash /etc/bchatha/scripts/consul_as_client.sh
+          sudo bash /etc/bchatha/scripts/consul_userdata.sh
           sudo bash /etc/bchatha/scripts/boundary_userdata.sh

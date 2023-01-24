@@ -3,5 +3,4 @@ sed -i "s/__replace_name/$(hostname)/g" /etc/boundary.d/boundary.hcl
 touch /is_boundary_server
 
 mv {{ v_dump_dir }}/config/service.boundary.hcl /etc/consul.d/service.boundary.hcl
-myIp=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
-sed -i "s/__replace_local_ip/$myIp/g" /etc/consul.d/service.boundary.hcl
+sed -i "s/__replace_local_ip/$(hostname -I | sed 's/ //')/g" /etc/consul.d/service.boundary.hcl

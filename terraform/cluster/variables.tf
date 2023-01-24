@@ -16,14 +16,14 @@ variable "enable_bootstrap_resources" {
   type = bool
 }
 
-variable "finished_bootstrapping" {
-  type = bool
-}
-
 variable "root_domain_name" {
   type = string
 }
 
 variable "allow_instant_delete_of_secrets" {
   type = bool
+}
+
+variable "ssh_cidr" {
+  type = string
 }

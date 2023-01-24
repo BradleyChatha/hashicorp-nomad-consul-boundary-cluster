@@ -2,6 +2,16 @@ locals {
   ami_suffix = formatdate("YYYY-MM-DD-hhmmss", timestamp())
 }
 
+variable "ansible_extra_arguments" {
+  type    = list(string)
+  default = []
+}
+
+variable "region" {
+  type = string
+  default = "eu-west-1"
+}
+
 packer {
   required_plugins {
     amazon = {
@@ -11,11 +21,11 @@ packer {
   }
 }
 
-source "amazon-ebs" "debian-eu-west-1" {
+source "amazon-ebs" "debian" {
   ami_name                = "cluster-golden-${local.ami_suffix}"
   instance_type           = "t4g.micro"
   ssh_username            = "admin"
-  region                  = "eu-west-1"
+  region                  = var.region
   temporary_key_pair_type = "ed25519"
 
   source_ami_filter {
@@ -30,13 +40,17 @@ source "amazon-ebs" "debian-eu-west-1" {
 }
 
 build {
-  name = "cluster"
+  name = "golden"
   sources = [
-    "source.amazon-ebs.debian-eu-west-1",
+    "source.amazon-ebs.debian",
   ]
 
   provisioner "ansible" {
     playbook_file = "./golden.ansible.yml"
     use_proxy     = false
+    extra_arguments = concat([
+      "--extra-vars", "v_nomad_region=${var.region}",
+      "--extra-vars", "v_consul_datacenter=${var.region}",
+    ], var.ansible_extra_arguments)
   }
 }

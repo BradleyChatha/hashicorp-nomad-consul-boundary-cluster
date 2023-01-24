@@ -1,3 +1,4 @@
-s3_backend_bucket: ""
-s3_backend_region: ""
-s3_backend_dynamodb: ""
+s3_backend_bucket: bradley-chatha
+s3_backend_region: eu-west-2
+s3_backend_dynamodb: terraform-lock
+root_domain_name: chatha.dev

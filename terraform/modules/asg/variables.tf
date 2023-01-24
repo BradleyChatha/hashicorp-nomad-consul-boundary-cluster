@@ -42,7 +42,7 @@ variable "cidr" {
   type = string
 }
 
-variable "dbg_ssh_key_name" {
+variable "ssh_key_name" {
   type    = any # string or null
   default = null
 }
@@ -64,4 +64,9 @@ variable "target_group_arn" {
 variable "instance_tags" {
   type    = map(string)
   default = { dummy = "s" }
+}
+
+variable "ssh_cidr" {
+  type    = string
+  default = ""
 }

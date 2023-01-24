@@ -56,7 +56,7 @@ module "iam" {
 
       policies = [
         "hashicorp_cloud_autojoin",
-        "consul_server"
+        "consul_server",
       ]
     }
 
@@ -66,7 +66,7 @@ module "iam" {
 
       policies = [
         "hashicorp_cloud_autojoin",
-        "consul_client"
+        "consul_client",
       ]
     }
 
@@ -87,7 +87,8 @@ module "iam" {
 
       policies = [
         "hashicorp_cloud_autojoin",
-        "boundary_client"
+        "consul_client",
+        "boundary_client",
       ]
     }
 
@@ -110,7 +111,7 @@ module "iam" {
         "hashicorp_cloud_autojoin",
         "consul_server",
         "boundary_server",
-        "traefik"
+        "traefik",
       ]
     }
 
@@ -121,7 +122,7 @@ module "iam" {
       policies = [
         "hashicorp_cloud_autojoin",
         "consul_client",
-        "boundary_client"
+        "boundary_client",
       ]
     }
   }

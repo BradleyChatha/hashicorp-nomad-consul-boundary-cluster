@@ -8,7 +8,7 @@ resource "aws_launch_template" "golden" {
   }
 
   name_prefix                          = var.user_friendly_name
-  key_name                             = var.dbg_ssh_key_name
+  key_name                             = var.ssh_key_name
   image_id                             = var.ami_id
   instance_initiated_shutdown_behavior = "terminate"
   vpc_security_group_ids               = [aws_security_group.asg.id]
@@ -36,7 +36,8 @@ resource "aws_autoscaling_group" "asg" {
 
   mixed_instances_policy {
     instances_distribution {
-      spot_allocation_strategy = "capacity-optimized"
+      spot_allocation_strategy = "price-capacity-optimized"
+      on_demand_base_capacity  = var.desired_capacity * 2
     }
 
     launch_template {
@@ -84,13 +85,13 @@ resource "aws_security_group" "asg" {
   }
 
   dynamic "ingress" {
-    for_each = var.dbg_ssh_key_name != null ? [1] : []
+    for_each = var.ssh_key_name != null ? [1] : []
     content {
-      cidr_blocks = ["0.0.0.0/0"]
+      cidr_blocks = [var.ssh_cidr]
       from_port   = 22
       to_port     = 22
       protocol    = "TCP"
-      description = "DEBUG Allow SSH connections"
+      description = "Allow SSH connections"
     }
   }
 

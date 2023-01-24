@@ -1,7 +1,4 @@
 ---
-- name: Wait for connection
-  ansible.builtin.wait_for_connection:
-
 - name: Check if the admin password already exists
   run_once: true
   register: r_stat_boundary_password

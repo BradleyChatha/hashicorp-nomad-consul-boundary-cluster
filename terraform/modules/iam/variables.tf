@@ -12,6 +12,7 @@ variable "policies" {
 variable "roles" {
   type = map(object({
     policies     = set(string)
+    aws_policies = optional(set(string), [])
     services     = set(string)
     service_role = optional(bool, false)
   }))
