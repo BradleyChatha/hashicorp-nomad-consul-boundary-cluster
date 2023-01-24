@@ -15,9 +15,9 @@ Also please note that, while I've tried to ensure that everything is region-inde
 
 - Public NLB load balancing between dedicated Traefik hosts
 - Traefik as the reverse proxy which is automatically configured to use Consul Catalog
-- Hashicorp Consul with ACL and automatic bootstrapping
-- Hashicorp Nomad with ACL and automatic bootstrapping
-- Hashicorp Boundary as the engineer entry point with automatic bootstrapping
+- Highly-available Hashicorp Consul with ACL and automatic bootstrapping
+- Highly-available Hashicorp Nomad with ACL and automatic bootstrapping
+- Highly-available Hashicorp Boundary as the engineer entry point with automatic bootstrapping
 
 # In the future
 
