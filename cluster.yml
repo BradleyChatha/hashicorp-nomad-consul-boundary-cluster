@@ -1,4 +1,4 @@
-s3_backend_bucket: bradley-chatha
-s3_backend_region: eu-west-2
-s3_backend_dynamodb: terraform-lock
-root_domain_name: chatha.dev
+s3_backend_bucket: bradley-chatha   # Which bucket to use for storing the Terraform state. Does not need to exist beforehand.
+s3_backend_dynamodb: terraform-lock # Which table to use for locking the Terraform state. Does not need to exist beforehand.
+s3_backend_region: eu-west-2        # Which region to create the S3 bucket and DynamoDB table
+root_domain_name: chatha.dev        # The root domain for this cluster (e.g. cluster.company.org).
