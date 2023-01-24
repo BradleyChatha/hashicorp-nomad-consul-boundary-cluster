@@ -42,7 +42,7 @@ Also please note that, while I've tried to ensure that everything is region-inde
 
 # Using this repo
 
-You can find a short video of me using the repo [here]().
+You can find a short video of me using the repo [here](https://www.linkedin.com/feed/update/urn:li:ugcPost:7023719412788527105/).
 
 Otherwise, here's a very quick and dirty list of what to do:
 
